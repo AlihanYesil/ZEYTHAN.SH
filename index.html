@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+  <title>Nexterm</title>
+  <link rel="stylesheet" href="node_modules/@fontsource/inter/400.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/inter/500.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/inter/600.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/inter/700.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/400.css">
+  <link rel="stylesheet" href="node_modules/@fontsource/jetbrains-mono/700.css">
+  <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="brand"><span class="logo">&gt;_</span><span>Nexterm</span></div>
+    <button id="btn-new" class="primary big">+ Yeni bağlantı</button>
+    <input id="search" type="search" placeholder="Bağlantı ara…" autocomplete="off">
+    <div class="section-label">BAĞLANTILAR</div>
+    <ul id="profiles"></ul>
+    <div class="side-foot">
+      <button id="btn-hl" class="wide" title="Çıktıyı otomatik renklendir (IP, yüzde, yol, hata vb.)">🎨 Renklendirme</button>
+      <button id="btn-theme" title="Açık / koyu tema">◐ Tema</button>
+      <div class="font-ctl" title="Terminal yazı boyutu">
+        <button id="btn-font-minus">A−</button>
+        <button id="btn-font-plus">A+</button>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header id="topbar">
+      <div id="tabs"></div>
+      <div class="tab-actions">
+        <button id="btn-files" class="chip">📁 Dosyalar</button>
+        <button id="btn-tunnels" class="chip">🔀 Tüneller</button>
+      </div>
+    </header>
+
+    <div id="workspace">
+      <div id="terms">
+        <div id="empty">
+          <div class="logo big">&gt;_</div>
+          <h2>Bağlanmaya hazır</h2>
+          <p>Soldan bir bağlantıya tıklayın veya yeni bir tane ekleyin.</p>
+          <p class="hint">Kopyala: Ctrl+Shift+C &nbsp;·&nbsp; Yapıştır: Ctrl+Shift+V &nbsp;·&nbsp; Sağ tık: kopyala / yapıştır</p>
+        </div>
+      </div>
+
+      <section id="sidepanel" hidden>
+        <div class="panel-head">
+          <div class="seg">
+            <button data-tab="files">📁 Dosyalar</button>
+            <button data-tab="tunnels">🔀 Tüneller</button>
+          </div>
+          <button id="btn-panel-close" class="icon-btn" title="Paneli kapat">✕</button>
+        </div>
+
+        <!-- SFTP -->
+        <div id="pane-files" class="pane">
+          <div id="files-msg" class="pane-msg">Dosya gezgini için önce bir sunucuya bağlanın.</div>
+          <div id="files-ui" hidden>
+            <div class="toolbar">
+              <button id="f-up" title="Üst klasöre çık">↑ Üst</button>
+              <button id="f-refresh" title="Yenile">⟳ Yenile</button>
+              <button id="f-mkdir" title="Yeni klasör oluştur">＋ Klasör</button>
+              <button id="f-upload" class="primary" title="Bilgisayardan dosya yükle">⇪ Yükle</button>
+              <input type="file" id="f-picker" multiple hidden>
+            </div>
+            <input id="f-path" class="pathbar" spellcheck="false" title="Yol yazıp Enter'a basın">
+            <div id="progress" hidden>
+              <div class="bar"><i id="progress-fill"></i></div>
+              <span id="progress-text"></span>
+            </div>
+            <div id="file-list" class="dropzone"></div>
+            <p class="hint">Dosya veya klasörleri listeye sürükleyip bırakın. Bir klasör satırına bırakırsanız o klasöre yüklenir.</p>
+          </div>
+        </div>
+
+        <!-- Tüneller -->
+        <div id="pane-tunnels" class="pane" hidden>
+          <div id="tun-msg" class="pane-msg">Tüneller için önce bir sunucuya bağlanın.</div>
+          <div id="tun-ui" hidden>
+            <p class="lead">Tünel, bir portu SSH bağlantınız üzerinden güvenle taşır. Örneğin sunucudaki bir veritabanına kendi bilgisayarınızdan bağlanabilirsiniz.</p>
+            <div id="tun-list"></div>
+            <form id="tun-form" class="card">
+              <h4>Yeni tünel</h4>
+              <label>Tür
+                <select id="t-type">
+                  <option value="local">Yerel — sunucudaki servise bu bilgisayardan eriş</option>
+                  <option value="remote">Uzak — bu bilgisayardaki servisi sunucuya aç</option>
+                </select>
+              </label>
+              <div class="row">
+                <label class="grow">Dinlenecek port <input id="t-listen" type="number" min="1" max="65535" required placeholder="8080"></label>
+                <label class="grow">Hedef port <input id="t-port" type="number" min="1" max="65535" required placeholder="80"></label>
+              </div>
+              <label>Hedef adres <input id="t-host" value="127.0.0.1" required></label>
+              <p id="t-explain" class="explain"></p>
+              <label class="check"><input id="t-auto" type="checkbox"> Bu bağlantı açılınca otomatik başlat</label>
+              <button type="submit" class="primary big">Ekle ve başlat</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toasts"></div>
+
+  <dialog id="dlg-profile">
+    <form id="form-profile" method="dialog">
+      <h3 id="profile-title">Yeni bağlantı</h3>
+      <label>Ad <input id="f-name" placeholder="Örn. Web sunucusu"></label>
+      <div class="row">
+        <label class="grow">Sunucu <input id="f-host" required placeholder="192.168.1.10 veya example.com"></label>
+        <label class="port">Port <input id="f-port" type="number" min="1" max="65535" value="22"></label>
+      </div>
+      <label>Kullanıcı adı <input id="f-user" required placeholder="root"></label>
+      <label>Kimlik doğrulama
+        <select id="f-auth">
+          <option value="password">Parola</option>
+          <option value="key">Özel anahtar (SSH key)</option>
+        </select>
+      </label>
+      <div id="grp-password">
+        <label>Parola <input id="f-pass" type="password" autocomplete="off"></label>
+        <label class="check" id="lbl-clear"><input id="f-clear" type="checkbox"> Kayıtlı parolayı sil</label>
+        <p class="hint">🔒 Parola, işletim sisteminin güvenli deposuyla şifrelenerek saklanır. Boş bırakırsanız her bağlantıda sorulur.</p>
+      </div>
+      <div id="grp-key" hidden>
+        <label>Anahtar dosyası
+          <div class="row">
+            <input id="f-key" class="grow" placeholder="~/.ssh/id_ed25519">
+            <button type="button" id="btn-browse">Seç…</button>
+          </div>
+        </label>
+        <label>Anahtar parolası (varsa) <input id="f-passphrase" type="password" autocomplete="off"></label>
+      </div>
+      <label class="check"><input id="f-color" type="checkbox" checked> Linux sunucu: bağlanınca <code>ls</code> ve <code>grep</code> renkli olsun</label>
+      <p class="hint">Bağlantı kurulunca sunucuda bu oturum için renk ayarları otomatik yapılır (kalıcı bir değişiklik yapmaz). Router/switch gibi cihazlarda veya çok satırlı özel prompt kullanıyorsanız kapatın.</p>
+      <p id="form-error" class="error" hidden></p>
+      <div class="actions">
+        <button type="button" id="btn-delete" class="danger" hidden>Sil</button>
+        <span class="grow"></span>
+        <button type="button" id="btn-cancel">Vazgeç</button>
+        <button type="submit" class="primary">Kaydet</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-input">
+    <form method="dialog">
+      <h3 id="input-title">Girdi</h3>
+      <p id="input-hint" class="hint" hidden></p>
+      <input id="input-field" autocomplete="off">
+      <div class="actions">
+        <span class="grow"></span>
+        <button value="cancel" formnovalidate>Vazgeç</button>
+        <button value="ok" id="input-ok" class="primary">Tamam</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-confirm">
+    <form method="dialog">
+      <h3 id="confirm-title">Emin misiniz?</h3>
+      <p id="confirm-msg"></p>
+      <div class="actions">
+        <span class="grow"></span>
+        <button value="cancel" formnovalidate>Vazgeç</button>
+        <button value="ok" id="confirm-ok" class="danger solid">Sil</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

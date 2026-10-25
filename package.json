@@ -1,0 +1,29 @@
+{
+  "name": "nexterm",
+  "version": "0.2.0",
+  "description": "Basit, şık SSH istemcisi (SFTP + tüneller)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.1.0",
+    "@fontsource/jetbrains-mono": "^5.1.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "ssh2": "^1.15.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "local.nexterm",
+    "productName": "Nexterm",
+    "files": ["*.js", "index.html", "style.css"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg" },
+    "linux": { "target": "AppImage" }
+  }
+}
